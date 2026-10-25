@@ -237,6 +237,13 @@
     </div>
 
     <div class="admin-sec">
+      <h3>Invited guests</h3>
+      <p class="sub" style="margin-bottom:8px">One name per line. This is the list guests pick from. Removing a name doesn't delete an RSVP they've already sent.</p>
+      <textarea id="guestEdit" rows="10" style="width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px" aria-label="Invited guests"></textarea>
+      <button type="button" class="dark-btn" id="saveGuests" style="margin-top:8px">Save guest list</button>
+    </div>
+
+    <div class="admin-sec">
       <h3>Start fresh</h3>
       <p class="sub" style="margin-bottom:8px">Deletes every RSVP so the page is empty for your guests. Event details are kept. This can't be undone.</p>
       <button type="button" class="del" id="clearAll" style="padding:10px 16px;font-size:14px">Clear all RSVPs</button>
@@ -421,6 +428,7 @@ const preview = (() => {
     adminSignOut: () => ({ ok: true }),
     adminGetAll: () => rows,
     adminSaveEvent: (t, e) => (ev = e),
+    adminSaveGuests: (t, l) => l,
     adminDelete: (t, id) => { rows = rows.filter(r => r.id !== id); return rows; },
     adminClearAll: () => { rows = []; return rows; }
   };
@@ -888,6 +896,7 @@ async function loadAdmin() {
 }
 
 function renderAdmin() {
+  $('guestEdit').value = FAMILIES.join('\n');
   $('evDate').value = EVENT.date || ''; $('evTime').value = EVENT.time || ''; $('evWhere').value = EVENT.where || '';
   const yes = adminRows.filter(r => r.status === 'yes');
   const people = yes.reduce((s, r) => s + r.adults + r.kids, 0);
@@ -957,6 +966,12 @@ $('clearAll').onclick = async () => {
   finally { $('clearAll').disabled = false; }
 };
 
+$('saveGuests').onclick = async () => {
+  try {
+    FAMILIES = await call('adminSaveGuests', adminToken, $('guestEdit').value.split('\n'));
+    $('guestEdit').value = FAMILIES.join('\n'); renderFamilies(); toast('Guest list saved');
+  } catch (err) { toast('Couldn’t save: ' + errMsg(err, 'try again')); }
+};
 $('saveEvent').onclick = async () => {
   try {
     const ev = await call('adminSaveEvent', adminToken, { date: $('evDate').value.trim(), time: $('evTime').value.trim(), where: $('evWhere').value.trim() });
