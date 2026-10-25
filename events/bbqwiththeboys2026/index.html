@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BBQ with the Boys</title>
+<meta name="description" content="RSVP and pot luck planner for BBQ with the Boys">
+<meta property="og:title" content="BBQ with the Boys 🍖">
+<meta property="og:description" content="You're invited! RSVP and tell us what you're bringing.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #fbf8f3; --card: #ffffff; --ink: #14305c; --muted: #5b7399; --line: #e2e8f1;
+    --blue: #2563eb; --blue-deep: #1e3a8a; --blue-soft: #eaf1fe; --sky: #dbeafe;
+    --good: #0f766e; --good-soft: #e0f3f0; --warn: #b4532a; --warn-soft: #fbece3;
+    --maybe: #8a6d1d; --maybe-soft: #f6efd9;
+    --shadow: 0 1px 2px rgba(20,48,92,.05), 0 8px 24px rgba(20,48,92,.06);
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 Inter, system-ui, sans-serif; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 16px 80px; }
+  h1, h2, h3 { font-family: Fraunces, Georgia, serif; margin: 0; letter-spacing: -.01em; color: var(--blue-deep); }
+  h2 { font-size: 22px; margin-bottom: 4px; }
+  .sub { color: var(--muted); margin: 0 0 16px; }
+
+  .hero { padding: 36px 0 20px; text-align: center; }
+  .hero .eyebrow { display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--blue); background: var(--blue-soft); padding: 4px 12px; border-radius: 99px; }
+  .hero h1 { font-size: clamp(34px, 9vw, 54px); font-weight: 800; margin: 12px 0 8px; line-height: 1.05; color: var(--blue-deep); }
+  .hero h1 span { color: var(--blue); }
+  .meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 16px; color: var(--muted); font-size: 14px; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 20px; margin-top: 16px; box-shadow: var(--shadow); }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .stat { text-align: center; padding: 12px 4px; border-radius: 14px; background: var(--blue-soft); }
+  .stat b { display: block; font: 800 26px/1.1 Fraunces, serif; color: var(--blue-deep); }
+  .stat small { color: var(--muted); font-size: 12px; }
+  @media (max-width: 420px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
+  .chart-box { position: relative; height: 320px; margin: 8px auto 0; max-width: 440px; }
+  .bar-box { position: relative; margin-top: 8px; }
+  .legend { display: flex; justify-content: center; gap: 16px; font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .divider { height: 1px; background: var(--line); margin: 20px 0 16px; }
+  h3.small { font-size: 17px; margin-bottom: 2px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+  .chip { font-size: 13px; padding: 5px 10px; border-radius: 99px; background: var(--bg); border: 1px solid var(--line); color: var(--ink); }
+  .chip.need { background: var(--good-soft); border-color: transparent; color: var(--good); font-weight: 600; }
+  .chip.full { background: var(--warn-soft); border-color: transparent; color: var(--warn); font-weight: 600; }
+
+  label { display: block; font-weight: 600; font-size: 14px; margin: 16px 0 6px; }
+  label small { font-weight: 400; color: var(--muted); }
+  input[type=text], input[type=tel], input[type=email], select, textarea {
+    width: 100%; font: inherit; color: var(--ink); background: #fff; border: 1px solid var(--line);
+    border-radius: 12px; padding: 11px 12px; outline: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px var(--sky); }
+  textarea { resize: vertical; min-height: 64px; }
+  .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg label { margin: 0; text-align: center; padding: 10px 4px; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; font-weight: 500; background: #fff; }
+  .seg label:has(input:checked) { border-color: var(--blue); background: var(--blue-soft); color: var(--blue-deep); font-weight: 600; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stepper { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 12px; background: #fff; overflow: hidden; }
+  .stepper button { border: 0; background: none; color: var(--blue); font-size: 20px; width: 44px; height: 44px; cursor: pointer; }
+  .stepper output { flex: 1; text-align: center; font-weight: 600; font-size: 17px; }
+  .ages { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+  .age { display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; border: 1px solid var(--line); border-radius: 12px; background: #fff; overflow: hidden; }
+  .age small { grid-column: 1 / -1; text-align: center; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding-top: 6px; }
+  .age button { border: 0; background: none; color: var(--blue); font-size: 20px; height: 40px; cursor: pointer; }
+  .age button:disabled { color: var(--line); cursor: default; }
+  .age output { text-align: center; font-weight: 600; font-size: 15px; }
+  .inline { display: flex; gap: 8px; }
+  .inline input { flex: 1; }
+  .inline button { flex: none; }
+  .who-box { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: var(--blue-soft); border-radius: 12px; padding: 10px 12px; font-size: 14px; }
+  .who-box b { color: var(--blue-deep); word-break: break-all; }
+  .link-btn { border: 0; background: none; color: var(--blue); font: 600 13px Inter, sans-serif; cursor: pointer; padding: 4px; }
+  .note { font-size: 13px; color: var(--muted); margin-top: 6px; }
+  .note.ok { color: var(--good); font-weight: 500; }
+  .note.err { color: var(--warn); font-weight: 500; }
+
+  .dish { border: 1px dashed #c9d6ea; border-radius: 14px; padding: 12px; margin-top: 10px; background: #fcfdff; }
+  .dish-top { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+  .dish select { margin-top: 8px; }
+  .dish .hint { font-size: 13px; margin-top: 6px; color: var(--muted); }
+  .dish .hint.warn { color: var(--warn); }
+  .dish .hint.good { color: var(--good); }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .tags label { margin: 0; font-weight: 500; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; border: 1px solid var(--line); border-radius: 99px; cursor: pointer; background: #fff; }
+  .tags label:has(input:checked) { background: var(--good-soft); border-color: transparent; color: var(--good); }
+  .tags input { accent-color: var(--good); margin: 0; }
+  .icon-btn { border: 1px solid var(--line); background: #fff; color: var(--muted); border-radius: 12px; width: 44px; cursor: pointer; font-size: 18px; }
+  .ghost { margin-top: 10px; width: 100%; padding: 11px; border: 1px dashed var(--blue); background: none; color: var(--blue); border-radius: 12px; font: 600 14px Inter, sans-serif; cursor: pointer; }
+  .primary { margin-top: 20px; width: 100%; padding: 14px; border: 0; background: var(--blue); color: #fff; border-radius: 14px; font: 600 16px Inter, sans-serif; cursor: pointer; }
+  .primary.slim { margin-top: 0; width: auto; padding: 11px 16px; font-size: 14px; border-radius: 12px; }
+  .primary:disabled { opacity: .6; cursor: wait; }
+  .private { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .group { margin-top: 14px; }
+  .group h3 { font: 600 14px Inter, sans-serif; margin: 0 0 6px; display: flex; justify-content: space-between; align-items: center; color: var(--blue-deep); }
+  .group h3 span { color: var(--muted); font-weight: 500; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; }
+  .item { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .item .who { color: var(--muted); white-space: nowrap; }
+  .pill { font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 6px; background: var(--good-soft); color: var(--good); margin-left: 4px; }
+  .pill.nuts { background: var(--warn-soft); color: var(--warn); }
+  .empty { color: var(--muted); font-size: 14px; padding: 8px 0; }
+  .guest { padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px; }
+  .guest b { font-weight: 600; }
+  .st { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; }
+  .guest .st { float: right; }
+  .st.yes { background: var(--good-soft); color: var(--good); }
+  .st.maybe { background: var(--maybe-soft); color: var(--maybe); }
+  .st.no { background: var(--bg); color: var(--muted); }
+  .guest .extra { color: var(--muted); font-size: 13px; }
+
+  .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(120px); background: var(--blue-deep); color: #fff; padding: 12px 18px; border-radius: 14px; font-weight: 600; transition: transform .3s; z-index: 10; max-width: calc(100% - 32px); }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .banner { background: var(--maybe-soft); color: var(--maybe); padding: 8px 12px; border-radius: 10px; font-size: 13px; margin-top: 12px; text-align: center; }
+  .loading { text-align: center; color: var(--muted); padding: 20px; }
+
+  /* Hosts */
+  .adminbar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: var(--blue-deep); color: #fff; padding: 10px 16px; font-size: 14px; font-weight: 600; }
+  .adminbar .tabs { display: flex; gap: 4px; background: rgba(255,255,255,.12); padding: 3px; border-radius: 99px; }
+  .adminbar button { white-space: nowrap; border: 0; border-radius: 99px; padding: 7px 12px; font: 600 13px Inter, sans-serif; cursor: pointer; background: transparent; color: #fff; }
+  .adminbar .tab[aria-selected="true"] { background: #fff; color: var(--blue-deep); }
+  .adminbar button.out { border: 1px solid rgba(255,255,255,.5); }
+  .admin-sec { margin-top: 22px; }
+  .admin-sec h3 { font-size: 17px; margin-bottom: 6px; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; -webkit-overflow-scrolling: touch; }
+  table.resp { border-collapse: collapse; font-size: 13px; min-width: 980px; width: 100%; }
+  table.resp th, table.resp td { text-align: left; vertical-align: top; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+  table.resp th { background: var(--blue-soft); color: var(--blue-deep); font-weight: 600; font-size: 12px; white-space: nowrap; position: sticky; top: 0; }
+  table.resp tr:last-child td { border-bottom: 0; }
+  table.resp td:first-child, table.resp th:first-child { position: sticky; left: 0; background: #fff; box-shadow: 1px 0 0 var(--line); font-weight: 600; min-width: 130px; }
+  table.resp th:first-child { background: var(--blue-soft); z-index: 1; }
+  table.resp .dish-line { white-space: nowrap; }
+  table.resp .muted { color: var(--muted); }
+  .kv { display: grid; gap: 6px; }
+  .kv div { background: var(--bg); border-radius: 10px; padding: 8px 10px; font-size: 14px; }
+  .kv b { color: var(--blue-deep); }
+  .sheet-link { display: inline-block; margin-top: 10px; color: var(--blue); font-weight: 600; text-decoration: none; }
+  .admin-card { border: 2px solid var(--blue-deep); }
+  .admin-card .row3 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .admin-card .row3 input:last-child { grid-column: 1 / -1; }
+  .dark-btn { margin-top: 10px; padding: 10px 16px; border: 0; border-radius: 12px; background: var(--blue-deep); color: #fff; font: 600 14px Inter, sans-serif; cursor: pointer; }
+  .hh { border-top: 1px solid var(--line); padding: 12px 0; font-size: 14px; }
+  .hh-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .hh .priv { margin-top: 4px; color: var(--muted); }
+  .hh .priv b { color: var(--ink); font-weight: 600; }
+  .del { border: 1px solid var(--line); background: #fff; color: var(--warn); border-radius: 8px; padding: 4px 10px; font: 500 12px Inter, sans-serif; cursor: pointer; }
+  .totals { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
+  /* Welcome */
+  .welcome { text-align: center; padding: 24px 20px; }
+  .welcome h2 { font-size: 26px; }
+  .event-grid { display: grid; gap: 8px; margin: 4px 0 18px; text-align: left; }
+  .event-item { display: flex; align-items: center; gap: 12px; background: var(--blue-soft); border-radius: 14px; padding: 12px 14px; }
+  .event-item .ic { font-size: 22px; }
+  .event-item small { display: block; color: var(--muted); font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  .event-item b { color: var(--blue-deep); font-size: 16px; }
+  .choices { display: grid; gap: 10px; }
+  .choices .primary { margin-top: 0; }
+  .secondary { width: 100%; padding: 14px; border: 1.5px solid var(--blue); background: #fff; color: var(--blue); border-radius: 14px; font: 600 16px Inter, sans-serif; cursor: pointer; }
+  .back { margin: -6px 0 6px -4px; }
+  [hidden] { display: none !important; }
+
+</style>
+</head>
+<body>
+<div class="adminbar" id="adminbar" hidden>
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" class="tab" id="tabAdmin" aria-selected="true">🔑 Admin</button>
+    <button type="button" role="tab" class="tab" id="tabGuest" aria-selected="false">👀 Guest view</button>
+  </div>
+  <button type="button" class="out" id="signOut">Sign out</button>
+</div>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">BBQ · Pot luck</div>
+    <h1>BBQ with the Boys</h1>
+    <div id="previewBanner"></div>
+  </header>
+
+  <!-- Host sign-in (host link only) -->
+  <section class="card admin-card" id="adminLogin" hidden>
+    <h2>Host sign-in</h2>
+    <p class="sub">Enter your host email and we'll send you a 6-digit code.</p>
+    <div class="inline">
+      <input type="email" id="loginEmail" maxlength="120" placeholder="you@gmail.com" autocomplete="email" aria-label="Host email">
+      <button type="button" class="primary slim" id="sendCode">Send code</button>
+    </div>
+    <div id="codeStep" hidden>
+      <label for="loginCode">Code from your email</label>
+      <div class="inline">
+        <input type="text" id="loginCode" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="one-time-code">
+        <button type="button" class="primary slim" id="verifyCode">Sign in</button>
+      </div>
+    </div>
+    <div class="note" id="loginNote"></div>
+  </section>
+
+  <!-- Host: Admin tab -->
+  <section class="card admin-card" id="adminPanel" hidden>
+    <h2>Admin</h2>
+    <p class="sub"><span id="adminWho"></span>Only hosts can see this tab. Guests never get the private details here.</p>
+    <div class="totals" id="adminTotals"></div>
+
+    <div class="admin-sec">
+      <h3>All responses</h3>
+      <p class="sub" style="margin-bottom:8px">Everything each guest entered. Scroll sideways on a phone.</p>
+      <div class="table-wrap"><div id="adminList"><div class="empty" style="padding:12px">Loading…</div></div></div>
+    </div>
+
+    <div class="admin-sec">
+      <h3>Allergies &amp; dietary needs</h3>
+      <div class="kv" id="adminDiet"></div>
+    </div>
+
+    <div class="admin-sec">
+      <h3>Contacts</h3>
+      <div class="kv" id="adminContacts"></div>
+    </div>
+
+    <div class="admin-sec">
+      <h3>Event details</h3>
+      <div class="row3">
+        <input type="text" id="evDate" maxlength="60" placeholder="Date" aria-label="Date">
+        <input type="text" id="evTime" maxlength="60" placeholder="Time" aria-label="Time">
+        <input type="text" id="evWhere" maxlength="120" placeholder="Where" aria-label="Where">
+      </div>
+      <button type="button" class="dark-btn" id="saveEvent">Save event details</button>
+    </div>
+
+    <div class="admin-sec">
+      <h3>Start fresh</h3>
+      <p class="sub" style="margin-bottom:8px">Deletes every RSVP so the page is empty for your guests. Event details are kept. This can't be undone.</p>
+      <button type="button" class="del" id="clearAll" style="padding:10px 16px;font-size:14px">Clear all RSVPs</button>
+    </div>
+
+    <a class="sheet-link" id="sheetLink" href="https://docs.google.com/spreadsheets/d/1VOH38V3bfGGcVe1wXPTdLiQjTENWHzDqNoDNIWeFUww/edit" target="_blank" rel="noopener">Open the Google Sheet ↗</a>
+    <p class="note">Hosts: sign in on this page once per device with the 6-digit code from your email.</p>
+  </section>
+
+  <div id="guestPage">
+
+  <!-- Welcome -->
+  <section class="card welcome" id="welcome">
+    <h2>You're invited! 🎉</h2>
+    <p class="sub">Boys' backyard BBQ. Let us know if you're coming and what you'll bring.</p>
+    <div class="event-grid" id="eventGrid"></div>
+    <div class="choices">
+      <button type="button" class="primary" id="startNew">RSVP</button>
+      <button type="button" class="secondary" id="startUpdate">Update my RSVP</button>
+    </div>
+  </section>
+
+  <section class="card" id="rsvp" hidden>
+    <button type="button" class="link-btn back" id="backHome">← Back</button>
+    <h2 id="formTitle">RSVP</h2>
+    <p class="sub" id="formSub"></p>
+
+    <!-- Update RSVP: find it by email -->
+    <div id="emailStep" hidden>
+      <label for="email">The email you used to RSVP</label>
+      <div class="inline">
+        <input type="email" id="email" maxlength="120" placeholder="you@example.com" autocomplete="email">
+        <button type="button" class="primary slim" id="emailGo">Find my RSVP</button>
+      </div>
+      <div class="note" id="emailNote"></div>
+      <button type="button" class="link-btn" id="toNew" hidden>Start a new RSVP instead</button>
+    </div>
+
+    <form id="form" novalidate hidden>
+      <!-- New RSVP: pick the family and give an email -->
+      <div id="newFields">
+        <label for="family">Your name</label>
+        <select id="family" required><option value="">Choose your name…</option></select>
+
+        <label for="newEmail">Email <small>(required)</small></label>
+        <input type="email" id="newEmail" maxlength="120" placeholder="you@example.com" autocomplete="email" required>
+        <div class="private">🔒 Only the hosts see your email; it isn't shared with anyone else. You'll use it if you need to update your RSVP.</div>
+      </div>
+
+      <div class="who-box" id="whoBox" hidden><span>RSVP for <b id="familyShown"></b><br><small id="emailShown"></small></span><button type="button" class="link-btn" id="changeEmail">Not you?</button></div>
+
+      <label>Can you make it?</label>
+      <div class="seg">
+        <label><input type="radio" name="status" value="yes" checked><span>Coming 🎉</span></label>
+        <label><input type="radio" name="status" value="maybe"><span>Maybe</span></label>
+        <label><input type="radio" name="status" value="no"><span>Can't make it</span></label>
+      </div>
+
+      <div id="attending">
+        <div class="row2">
+          <div><label>Adults</label><div class="stepper" data-for="adults"><button type="button" data-d="-1" aria-label="Fewer adults">−</button><output id="adults">2</output><button type="button" data-d="1" aria-label="More adults">+</button></div></div>
+          <div><label>Kids</label><div class="stepper" data-for="kids"><button type="button" data-d="-1" aria-label="Fewer kids">−</button><output id="kids">0</output><button type="button" data-d="1" aria-label="More kids">+</button></div></div>
+        </div>
+        <div id="kidAgesWrap" hidden>
+          <label>Kids' ages <small>(helps us plan games &amp; food)</small></label>
+          <div class="ages" id="kidAgeList"></div>
+        </div>
+
+        <label>What are you bringing?</label>
+        <div id="dishes"></div>
+        <button type="button" class="ghost" id="addDish">+ Add a dish or drink</button>
+
+        <label for="extras">Bringing anything else? <small>(optional)</small></label>
+        <input type="text" id="extras" maxlength="120" placeholder="e.g. camping chairs, an esky, backyard cricket set">
+
+        <label for="dietary">Allergies or dietary needs in your group <small>(optional)</small></label>
+        <input type="text" id="dietary" maxlength="200" placeholder="e.g. Mia is coeliac">
+        <div class="private">🔒 Only the hosts see this.</div>
+      </div>
+
+      <label for="contact">Mobile <small>(optional)</small></label>
+      <input type="tel" id="contact" maxlength="80" placeholder="In case we need to reach you on the day">
+      <div class="private">🔒 Only the hosts see this.</div>
+
+      <label for="message">A note for the hosts <small>(optional)</small></label>
+      <textarea id="message" maxlength="200"></textarea>
+
+      <button type="submit" class="primary" id="submit">Send my RSVP</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Who's coming</h2>
+    <div class="stats" id="stats"><div class="loading">Loading…</div></div>
+  </section>
+
+  <section class="card">
+    <h2>How balanced is the spread?</h2>
+    <p class="sub">What's been pledged so far against a nicely balanced table. Have a look before you pick what to bring.</p>
+    <div class="chart-box"><canvas id="radar" aria-label="Radar chart of dishes by category"></canvas></div>
+    <div class="legend"><span><i style="background:#2563eb"></i>Pledged</span><span><i style="background:#9fb3d1"></i>Balanced spread</span></div>
+    <div class="chips" id="gaps"></div>
+
+    <div class="divider"></div>
+    <h3 class="small">Who's bringing what</h3>
+    <p class="sub">Each household's dishes, by category.</p>
+    <div class="bar-box" id="barBox"><canvas id="bars" aria-label="Stacked bar chart of each household's dishes by category"></canvas></div>
+  </section>
+
+
+  <section class="card">
+    <h2>On the menu</h2>
+    <p class="sub" id="menuSub"></p>
+    <div id="menu"></div>
+  </section>
+
+  <section class="card">
+    <h2>Guest list</h2>
+    <div id="guests"></div>
+  </section>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// Event details come from the server (editable in the host dashboard); these are just fallbacks.
+let EVENT = { date: 'Saturday 28 November', time: 'From 1pm', where: 'Our place (address in the group chat)' };
+
+const CATS = [
+  { key: 'mains',    label: 'Mains & BBQ',   emoji: '🍖', w: 0.24, color: '#1e3a8a' },
+  { key: 'salads',   label: 'Salads',        emoji: '🥗', w: 0.15, color: '#0f766e' },
+  { key: 'sides',    label: 'Sides & bread', emoji: '🥖', w: 0.14, color: '#2563eb' },
+  { key: 'starters', label: 'Snacks',        emoji: '🧀', w: 0.12, color: '#60a5fa' },
+  { key: 'desserts', label: 'Desserts',      emoji: '🍰', w: 0.13, color: '#7c3aed' },
+  { key: 'soft',     label: 'Soft drinks',   emoji: '🧃', w: 0.11, color: '#22b8cf' },
+  { key: 'alcohol',  label: 'Beer & wine',   emoji: '🍺', w: 0.11, color: '#94a3b8' }
+];
+const TAGS = [
+  { key: 'veg', label: 'Vegetarian' }, { key: 'vegan', label: 'Vegan' },
+  { key: 'gf', label: 'Gluten-free' }, { key: 'df', label: 'Dairy-free' },
+  { key: 'nuts', label: 'Contains nuts' }
+];
+const catOf = k => CATS.find(c => c.key === k) || CATS[2];
+
+// ---- Backend bridge (Google Apps Script, or an in-browser preview) ----
+// The Google Apps Script web app that stores RSVPs in the Google Sheet.
+const API_URL = 'https://script.google.com/macros/s/AKfycbyIKr0n6tC60vm_5T-3XvzWB36OF9miqRLr1fVGFpmPR0qMq1EQGt9VMe4aw29F7vKL/exec';
+const LIVE = location.protocol !== 'file:';   // opened from disk = preview with sample data
+const MODE = (new URLSearchParams(location.search).get('page') === 'admin' || location.hash === '#admin') ? 'admin' : 'guest';
+const preview = (() => {
+  let rows = [
+    { id: 'p1', email: 'smiths@example.com', household: 'Cassie & Theo', status: 'yes', adults: 2, kids: 2, kidAges: '5, 8', extras: 'Cricket set', message: '', contact: '', dietary: '',
+      dishes: [{ name: 'Pavlova', cat: 'desserts', tags: ['gf', 'veg'] }, { name: 'Sausages', cat: 'mains', tags: [] }, { name: 'Lemonade', cat: 'soft', tags: [] }] },
+    { id: 'p2', email: 'ap@example.com', household: 'Steph & Jason', status: 'yes', adults: 2, kids: 0, kidAges: '', extras: '', message: '', contact: '0400 000 000', dietary: 'Priya: no nuts',
+      dishes: [{ name: 'Brownies', cat: 'desserts', tags: ['veg', 'nuts'] }, { name: 'Pale ales', cat: 'alcohol', tags: [] }] },
+    { id: 'p3', email: 'kim@example.com', household: 'Dani & Tony', status: 'maybe', adults: 1, kids: 1, kidAges: '3', extras: '', message: '', contact: '', dietary: '',
+      dishes: [{ name: 'Greek salad', cat: 'salads', tags: ['veg', 'gf'] }] }
+  ];
+  let ev = null;
+  const FAM = ['Celica & Tommy', 'Cassie & Theo', 'Steph & Jason', 'Lynette & Mafdy', 'Kathleen & Bryan', 'Nicole & Brendan', 'Erica & Darryl', 'Dani & Tony', 'Chrissy & Jak', 'Jess & Clinton', 'Madeline Cadiz'];
+  const pub = r => { const { email, contact, dietary, ...p } = r; return p; };
+  return {
+    boot: () => ({ all: rows.map(pub), event: ev, families: FAM }),
+    findByEmail: e => rows.find(r => r.email === String(e).trim().toLowerCase()) || null,
+    save: d => {
+      const email = String(d.email).trim().toLowerCase();
+      const old = rows.find(r => r.email === email);
+      if (d.mode === 'update') { if (!old) throw new Error('We couldn’t find an RSVP for that email.'); d = { ...d, household: old.household }; }
+      else {
+        if (!FAM.includes(d.household)) throw new Error('Please choose your name from the list.');
+        if (old) throw new Error('That email already has an RSVP. Tap “Update my RSVP” to change it.');
+        if (rows.some(r => r.household === d.household)) throw new Error(d.household + ' has already RSVP’d.');
+      }
+      const rec = { ...d, email, id: old ? old.id : 'me' + Date.now() };
+      rows = rows.filter(r => r.email !== email).concat(rec);
+      return { all: rows.map(pub), mine: rec };
+    },
+    adminCheck: () => ({ email: '' }),
+    adminSendCode: () => ({ ok: true }),
+    adminVerify: (e, c) => { if (c !== '123456') throw new Error('That code doesn’t match.'); return { token: 'preview', email: e }; },
+    adminSignOut: () => ({ ok: true }),
+    adminGetAll: () => rows,
+    adminSaveEvent: (t, e) => (ev = e),
+    adminDelete: (t, id) => { rows = rows.filter(r => r.id !== id); return rows; },
+    adminClearAll: () => { rows = []; return rows; }
+  };
+})();
+async function call(fn, ...args) {
+  if (!LIVE) return new Promise((resolve, reject) => setTimeout(() => { try { resolve(preview[fn](...args)); } catch (e) { reject(e); } }, 150));
+  let res;
+  try {
+    res = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn, args }), redirect: 'follow' });
+  } catch (e) { throw new Error('Couldn’t reach the server — check your connection and try again.'); }
+  let data;
+  try { data = await res.json(); } catch (e) { throw new Error('The server sent an unexpected reply — try again in a moment.'); }
+  if (!data.ok) throw new Error(data.error || 'Something went wrong.');
+  return data.result;
+}
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }
+};
+const errMsg = (err, fallback) => (err && err.message) || fallback;
+
+// ---- State ----
+let all = [];
+let myEmail = '', myId = '', myFamily = '', formMode = 'new';
+let FAMILIES = [];
+let radarChart = null, barChart = null;
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+
+// ---- Aggregates ----
+function attendingRecs() { return all.filter(r => r.status !== 'no'); }
+function countsBy(excludeMine) {
+  const c = Object.fromEntries(CATS.map(x => [x.key, 0]));
+  attendingRecs().forEach(r => {
+    if (excludeMine && myId && r.id === myId) return;
+    (r.dishes || []).forEach(d => { if (c[d.cat] != null) c[d.cat]++; });
+  });
+  return c;
+}
+function ideal(total) { const t = Math.max(total, 7); return Object.fromEntries(CATS.map(c => [c.key, +(c.w * t).toFixed(1)])); }
+
+// ---- Render ----
+function renderMeta() {
+  $('eventGrid').innerHTML = [['📅', 'When', EVENT.date], ['🕐', 'Time', EVENT.time], ['📍', 'Where', EVENT.where]]
+    .filter(x => x[2]).map(([ic, k, v]) => `<div class="event-item"><span class="ic">${ic}</span><div><small>${k}</small><b>${esc(v)}</b></div></div>`).join('');
+  if (!LIVE) $('previewBanner').innerHTML = '<div class="banner">Preview mode · sample data, nothing is saved</div>';
+}
+
+function renderStats() {
+  const yes = all.filter(r => r.status === 'yes');
+  const maybe = all.filter(r => r.status === 'maybe');
+  const adults = yes.reduce((s, r) => s + r.adults, 0);
+  const kids = yes.reduce((s, r) => s + r.kids, 0);
+  const maybePeople = maybe.reduce((s, r) => s + r.adults + r.kids, 0);
+  $('stats').innerHTML = [
+    [yes.length, 'coming'], [adults, 'adults'], [kids, 'kids'], [maybePeople, 'maybes']
+  ].map(([n, l]) => `<div class="stat"><b>${n}</b><small>${l}</small></div>`).join('');
+}
+
+const chartFont = { family: 'Inter', size: 12 };
+
+function renderRadar() {
+  const c = countsBy(false);
+  const total = Object.values(c).reduce((a, b) => a + b, 0);
+  const id = ideal(total);
+  const data = {
+    labels: CATS.map(x => x.emoji + ' ' + x.label),
+    datasets: [
+      { label: 'Balanced spread', data: CATS.map(x => id[x.key]), borderColor: '#9fb3d1', backgroundColor: 'transparent', borderDash: [5, 4], borderWidth: 1.5, pointRadius: 0 },
+      { label: 'Pledged', data: CATS.map(x => c[x.key]), borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,.18)', borderWidth: 2, pointRadius: 3, pointBackgroundColor: '#2563eb' }
+    ]
+  };
+  if (typeof Chart === 'undefined') {
+    const box = document.querySelector('.chart-box');
+    if (box) box.outerHTML = '<p class="empty">Chart couldn’t load — the list below has everything.</p>';
+  } else if (radarChart) {
+    radarChart.data = data;
+    radarChart.options.scales.r.suggestedMax = Math.max(3, ...Object.values(id), ...Object.values(c));
+    radarChart.update();
+  } else {
+    radarChart = new Chart($('radar'), {
+      type: 'radar', data,
+      options: {
+        maintainAspectRatio: false, animation: { duration: 400 },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.raw } } },
+        scales: { r: {
+          beginAtZero: true, suggestedMax: Math.max(3, ...Object.values(id), ...Object.values(c)),
+          ticks: { display: false, stepSize: 1 },
+          grid: { color: '#e2e8f1' }, angleLines: { color: '#e2e8f1' },
+          pointLabels: { color: '#14305c', font: chartFont }
+        } }
+      }
+    });
+  }
+  const chips = CATS.map(x => {
+    const diff = c[x.key] - id[x.key];
+    if (diff <= -0.75) return `<span class="chip need">Could use: ${x.emoji} ${x.label}</span>`;
+    if (diff >= 1.25) return `<span class="chip full">Plenty of ${x.emoji} ${x.label.toLowerCase()}</span>`;
+    return '';
+  }).filter(Boolean);
+  $('gaps').innerHTML = total === 0
+    ? '<span class="chip">Nothing pledged yet — anything goes!</span>'
+    : (chips.length ? chips.join('') : '<span class="chip need">Looking nicely balanced 👌</span>');
+}
+
+function renderBars() {
+  const hh = attendingRecs().filter(r => (r.dishes || []).length);
+  const box = $('barBox');
+  if (!hh.length) { box.innerHTML = '<p class="empty">No dishes pledged yet.</p>'; barChart = null; return; }
+  if (typeof Chart === 'undefined') { box.innerHTML = '<p class="empty">Chart couldn’t load — the menu below has everything.</p>'; return; }
+  if (!$('bars')) { box.innerHTML = '<canvas id="bars" aria-label="Stacked bar chart of each household\'s dishes by category"></canvas>'; barChart = null; }
+  box.style.height = Math.max(150, hh.length * 38 + 90) + 'px';
+  const max = Math.max(...hh.map(r => r.dishes.length));
+  const used = CATS.filter(c => hh.some(r => r.dishes.some(d => d.cat === c.key)));
+  const data = {
+    labels: hh.map(r => r.household + (r.status === 'maybe' ? ' (maybe)' : '')),
+    datasets: used.map(c => ({
+      label: c.emoji + ' ' + c.label,
+      data: hh.map(r => r.dishes.filter(d => d.cat === c.key).length),
+      backgroundColor: c.color, borderRadius: 4, borderSkipped: false, barThickness: 22
+    }))
+  };
+  if (barChart) {
+    barChart.$hh = hh; barChart.$used = used;
+    barChart.data = data; barChart.options.scales.x.suggestedMax = Math.max(3, max); barChart.update();
+    return;
+  }
+  barChart = new Chart($('bars'), {
+    type: 'bar', data,
+    options: {
+      indexAxis: 'y', maintainAspectRatio: false, animation: { duration: 400 },
+      plugins: {
+        legend: { position: 'bottom', labels: { color: '#14305c', font: chartFont, boxWidth: 12, boxHeight: 12, useBorderRadius: true, borderRadius: 3 } },
+        tooltip: {
+          filter: i => i.raw > 0,
+          callbacks: {
+            label: ctx => {
+              const r = ctx.chart.$hh[ctx.dataIndex];
+              const key = ctx.chart.$used[ctx.datasetIndex].key;
+              const names = (r && r.dishes ? r.dishes : []).filter(d => d.cat === key).map(d => d.name).join(', ');
+              return ctx.dataset.label + ': ' + names;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { stacked: true, beginAtZero: true, suggestedMax: Math.max(3, max), ticks: { stepSize: 1, precision: 0, color: '#5b7399', font: chartFont }, grid: { color: '#eef2f8' }, title: { display: true, text: 'Dishes & drinks', color: '#5b7399', font: chartFont } },
+        y: { stacked: true, ticks: { color: '#14305c', font: { ...chartFont, weight: '600' } }, grid: { display: false } }
+      }
+    }
+  });
+  barChart.$hh = hh; barChart.$used = used;
+}
+
+function renderMenu() {
+  const items = [];
+  attendingRecs().forEach(r => (r.dishes || []).forEach(d => items.push({ ...d, who: r.household, maybe: r.status === 'maybe' })));
+  const veg = items.filter(d => (d.tags || []).some(t => t === 'veg' || t === 'vegan')).length;
+  const gf = items.filter(d => (d.tags || []).includes('gf')).length;
+  $('menuSub').textContent = items.length ? `${items.length} dishes & drinks · ${veg} vegetarian · ${gf} gluten-free` : 'Nothing yet — be the first!';
+  $('menu').innerHTML = CATS.map(c => {
+    const list = items.filter(d => d.cat === c.key);
+    const rows = list.length ? list.map(d => `<div class="item"><div>${esc(d.name)}${(d.tags || []).map(t => `<span class="pill ${t === 'nuts' ? 'nuts' : ''}">${esc((TAGS.find(x => x.key === t) || {}).label || t)}</span>`).join('')}</div><div class="who">${esc(d.who)}${d.maybe ? ' (maybe)' : ''}</div></div>`).join('') : '<div class="empty">None yet</div>';
+    return `<div class="group"><h3><span style="color:inherit"><i class="swatch" style="background:${c.color}"></i>${c.emoji} ${c.label}</span> <span>${list.length}</span></h3>${rows}</div>`;
+  }).join('');
+}
+
+function renderGuests() {
+  const order = { yes: 0, maybe: 1, no: 2 };
+  const label = { yes: 'Coming', maybe: 'Maybe', no: "Can't make it" };
+  const list = [...all].sort((a, b) => order[a.status] - order[b.status] || a.household.localeCompare(b.household));
+  $('guests').innerHTML = list.length ? list.map(r => {
+    const people = r.status === 'no' ? '' : `${r.adults} adult${r.adults === 1 ? '' : 's'}${r.kids ? `, ${r.kids} kid${r.kids === 1 ? '' : 's'}${r.kidAges ? ' (ages ' + fmtAges(r.kidAges) + ')' : ''}` : ''}`;
+    return `<div class="guest"><span class="st ${r.status}">${label[r.status]}</span><b>${esc(r.household)}</b>${myId && r.id === myId ? ' <small>(you)</small>' : ''}<div class="extra">${people}${r.extras ? ' · also bringing ' + esc(r.extras) : ''}</div></div>`;
+  }).join('') : '<div class="empty">No RSVPs yet.</div>';
+}
+
+function renderAll() { renderStats(); renderRadar(); renderBars(); renderMenu(); renderGuests(); renderFamilies(); refreshHints(); }
+
+// ---- RSVP flow: welcome → new RSVP (family + email) or update (find by email) ----
+function note(id, text, kind) { const n = $(id); n.textContent = text || ''; n.className = 'note' + (kind ? ' ' + kind : ''); }
+const takenFamilies = () => new Set(all.map(r => String(r.household).trim().toLowerCase()));
+
+function renderFamilies() {
+  const sel = $('family'), keep = sel.value, taken = takenFamilies();
+  sel.innerHTML = '<option value="">Choose your name…</option>' + FAMILIES.map(f => {
+    const done = taken.has(f.toLowerCase()) && f !== myFamily;
+    return `<option value="${esc(f)}"${done ? ' disabled' : ''}>${esc(f)}${done ? ' — already RSVP’d' : ''}</option>`;
+  }).join('');
+  if (keep && [...sel.options].some(o => o.value === keep && !o.disabled)) sel.value = keep;
+}
+
+function showScreen(screen) {
+  $('welcome').hidden = screen !== 'home';
+  $('rsvp').hidden = screen === 'home';
+  const target = screen === 'home' ? document.body : $('rsvp');
+  setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+}
+
+function startNew() {
+  formMode = 'new'; myEmail = ''; myId = ''; myFamily = '';
+  resetForm(); renderFamilies();
+  $('newEmail').value = '';
+  $('newFields').hidden = false; $('whoBox').hidden = true;
+  $('emailStep').hidden = true; $('form').hidden = false;
+  $('formTitle').textContent = 'RSVP';
+  $('formSub').textContent = 'Choose your name, add your email, then tell us who’s coming and what you’ll bring.';
+  $('submit').textContent = 'Send my RSVP';
+  showScreen('rsvp'); renderAll();
+}
+
+function startUpdate() {
+  formMode = 'update'; myEmail = ''; myId = ''; myFamily = '';
+  $('emailStep').hidden = false; $('form').hidden = true; $('toNew').hidden = true;
+  $('formTitle').textContent = 'Update your RSVP';
+  $('formSub').textContent = 'Enter the email you used when you RSVP’d.';
+  note('emailNote', '');
+  showScreen('rsvp'); renderAll();
+  setTimeout(() => $('email').focus(), 300);
+}
+
+function showMine(mine) {
+  formMode = 'update'; myEmail = String(mine.email || myEmail).toLowerCase(); myId = mine.id; myFamily = mine.household;
+  fill(mine);
+  $('familyShown').textContent = mine.household; $('emailShown').textContent = myEmail;
+  $('newFields').hidden = true; $('whoBox').hidden = false;
+  $('emailStep').hidden = true; $('form').hidden = false;
+}
+
+$('startNew').onclick = startNew;
+$('startUpdate').onclick = startUpdate;
+$('toNew').onclick = startNew;
+$('backHome').onclick = () => { myEmail = ''; myId = ''; myFamily = ''; showScreen('home'); renderAll(); };
+$('changeEmail').onclick = startUpdate;
+
+$('emailGo').onclick = async () => {
+  const email = $('email').value.trim().toLowerCase();
+  if (!validEmail(email)) { note('emailNote', 'Please enter a valid email.', 'err'); $('email').focus(); return; }
+  $('emailGo').disabled = true; note('emailNote', 'Looking up your RSVP…'); $('toNew').hidden = true;
+  try {
+    const mine = await call('findByEmail', email);
+    if (!mine) {
+      note('emailNote', 'We couldn’t find an RSVP for that email. Check the spelling, or start a new RSVP.', 'err');
+      $('toNew').hidden = false; return;
+    }
+    myEmail = email; showMine(mine); note('emailNote', '');
+    renderAll();
+    toast('Found it — make your changes below');
+  } catch (err) {
+    note('emailNote', errMsg(err, 'Couldn’t check that email — try again.'), 'err');
+  } finally { $('emailGo').disabled = false; }
+};
+$('email').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('emailGo').click(); } });
+
+// ---- Form ----
+function dishRow(d) {
+  d = d || { name: '', cat: '', tags: [] };
+  const el = document.createElement('div');
+  el.className = 'dish';
+  el.innerHTML = `
+    <div class="dish-top"><input type="text" class="d-name" maxlength="60" placeholder="e.g. Potato salad" aria-label="Dish name"><button type="button" class="icon-btn" aria-label="Remove">×</button></div>
+    <select class="d-cat" aria-label="Category"><option value="">Choose a category…</option>${CATS.map(c => `<option value="${c.key}">${c.emoji} ${c.label}</option>`).join('')}</select>
+    <div class="tags">${TAGS.map(t => `<label><input type="checkbox" value="${t.key}">${t.label}</label>`).join('')}</div>
+    <div class="hint"></div>`;
+  el.querySelector('.d-name').value = d.name;
+  el.querySelector('.d-cat').value = d.cat;
+  el.querySelectorAll('.tags input').forEach(cb => cb.checked = (d.tags || []).includes(cb.value));
+  el.querySelector('.icon-btn').onclick = () => { el.remove(); refreshHints(); };
+  el.querySelector('.d-cat').onchange = refreshHints;
+  el.querySelector('.d-name').oninput = refreshHints;
+  $('dishes').appendChild(el);
+  refreshHints();
+}
+
+const STOP = new Set(['the', 'a', 'and', 'of', 'with', 'my', 'some', 'homemade', 'home', 'made', 'mum', 'mums', 'big', 'bowl']);
+const words = s => String(s).toLowerCase().replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !STOP.has(w));
+
+function refreshHints() {
+  const others = countsBy(true);
+  const total = Object.values(others).reduce((a, b) => a + b, 0) + $('dishes').children.length;
+  const id = ideal(total);
+  const otherDishes = [];
+  attendingRecs().forEach(r => { if (!(myId && r.id === myId)) (r.dishes || []).forEach(d => otherDishes.push({ ...d, who: r.household })); });
+  [...$('dishes').children].forEach(el => {
+    const hint = el.querySelector('.hint');
+    const cat = el.querySelector('.d-cat').value;
+    const name = el.querySelector('.d-name').value;
+    const w = words(name);
+    const dupe = w.length && otherDishes.find(o => words(o.name).some(x => w.includes(x)));
+    hint.className = 'hint';
+    if (dupe) { hint.classList.add('warn'); hint.textContent = `Heads up: ${dupe.who} is already bringing “${dupe.name}”.`; return; }
+    if (!cat) { hint.textContent = ''; return; }
+    const n = others[cat];
+    if (n + 1 - id[cat] >= 1.25) { hint.classList.add('warn'); hint.textContent = `${n} already coming — we're well stocked on ${catOf(cat).label.toLowerCase()}.`; }
+    else if (n < id[cat] - 0.5) { hint.classList.add('good'); hint.textContent = `${n} so far — great pick, we need more of these!`; }
+    else hint.textContent = `${n} already coming.`;
+  });
+}
+
+function stepper(name, v) { $(name).value = v; $(name).textContent = v; if (name === 'kids') renderAges(); }
+
+// One age picker per kid: Under 1, then 1–17. Stored as e.g. "<1, 4, 9".
+let kidAges = [];
+const AGE_DEFAULT = 5;
+const ageLabel = a => a === 0 ? 'Under 1' : a + (a === 1 ? ' yr' : ' yrs');
+const parseAges = s => String(s || '').split(',').map(x => x.trim()).filter(Boolean)
+  .map(x => /^</.test(x) || /under|month|mth|week|wk|baby|newborn/i.test(x) ? 0 : parseInt(x, 10)).filter(n => !isNaN(n)).map(n => Math.max(0, Math.min(17, n)));
+const agesText = () => kidAges.map(a => a === 0 ? '<1' : String(a)).join(', ');
+const fmtAges = s => esc(String(s).replace(/<1/g, 'under 1'));
+function renderAges() {
+  const n = Number($('kids').textContent) || 0;
+  while (kidAges.length < n) kidAges.push(AGE_DEFAULT);
+  kidAges.length = n;
+  $('kidAgesWrap').hidden = n === 0;
+  $('kidAgeList').innerHTML = kidAges.map((a, i) => `<div class="age" data-i="${i}"><small>Kid ${i + 1}</small>` +
+    `<button type="button" data-d="-1" aria-label="Kid ${i + 1} younger"${a === 0 ? ' disabled' : ''}>−</button>` +
+    `<output aria-live="polite">${ageLabel(a)}</output>` +
+    `<button type="button" data-d="1" aria-label="Kid ${i + 1} older"${a === 17 ? ' disabled' : ''}>+</button></div>`).join('');
+}
+$('kidAgeList').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const i = Number(b.closest('.age').dataset.i);
+  kidAges[i] = Math.max(0, Math.min(17, kidAges[i] + Number(b.dataset.d)));
+  renderAges();
+});
+document.querySelectorAll('.stepper').forEach(s => s.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const f = s.dataset.for;
+  stepper(f, Math.max(0, Math.min(20, Number($(f).textContent) + Number(b.dataset.d))));
+}));
+function statusVal() { return document.querySelector('input[name=status]:checked').value; }
+document.querySelectorAll('input[name=status]').forEach(r => r.onchange = () => { $('attending').hidden = statusVal() === 'no'; });
+$('addDish').onclick = () => { if ($('dishes').children.length < 6) dishRow(); };
+
+function collect() {
+  const status = statusVal();
+  return {
+    mode: formMode,
+    email: formMode === 'new' ? $('newEmail').value.trim().toLowerCase() : myEmail,
+    household: formMode === 'new' ? $('family').value : myFamily,
+    status,
+    adults: status === 'no' ? 0 : Number($('adults').textContent),
+    kids: status === 'no' ? 0 : Number($('kids').textContent),
+    kidAges: status === 'no' ? '' : agesText(),
+    extras: $('extras').value.trim(),
+    dietary: $('dietary').value.trim(),
+    contact: $('contact').value.trim(),
+    message: $('message').value.trim(),
+    dishes: status === 'no' ? [] : [...$('dishes').children].map(el => ({
+      name: el.querySelector('.d-name').value.trim(),
+      cat: el.querySelector('.d-cat').value || 'sides',
+      tags: [...el.querySelectorAll('.tags input:checked')].map(c => c.value)
+    })).filter(d => d.name)
+  };
+}
+
+function resetForm() {
+  document.querySelector('input[name=status][value="yes"]').checked = true;
+  $('attending').hidden = false;
+  kidAges = [];
+  stepper('adults', 2); stepper('kids', 0);
+  ['extras', 'dietary', 'contact', 'message'].forEach(k => $(k).value = '');
+  $('dishes').innerHTML = ''; dishRow();
+}
+
+function fill(r) {
+  const st = document.querySelector(`input[name=status][value="${r.status}"]`) || document.querySelector('input[name=status][value="yes"]');
+  st.checked = true;
+  $('attending').hidden = r.status === 'no';
+  kidAges = parseAges(r.kidAges);
+  stepper('adults', r.adults || 0); stepper('kids', r.kids || 0);
+  $('extras').value = r.extras || ''; $('dietary').value = r.dietary || '';
+  $('contact').value = r.contact || ''; $('message').value = r.message || '';
+  $('dishes').innerHTML = '';
+  (r.dishes && r.dishes.length ? r.dishes : [null]).forEach(dishRow);
+  setEditing(true);
+}
+function setEditing(on) {
+  if (!on) return;
+  $('formTitle').textContent = 'Your RSVP';
+  $('formSub').textContent = 'You’re on the list. Change anything and save again.';
+  $('submit').textContent = 'Save changes';
+}
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2800); }
+
+$('form').onsubmit = async e => {
+  e.preventDefault();
+  const d = collect();
+  if (formMode === 'new') {
+    if (!d.household) { $('family').focus(); toast('Please choose your name'); return; }
+    if (!validEmail(d.email)) { $('newEmail').focus(); toast('Please add a valid email'); return; }
+  }
+  if (d.status !== 'no' && d.adults + d.kids === 0) { toast('Add at least one person'); return; }
+  $('submit').disabled = true;
+  try {
+    const res = await call('save', d);
+    all = res.all;
+    if (res.mine) showMine(res.mine);
+    setEditing(true); renderAll();
+    if (hostOn()) loadAdmin();
+    toast(d.status === 'no' ? 'Thanks for letting us know 💙' : 'You’re in! See you there 🎉');
+  } catch (err) {
+    toast('Couldn’t save: ' + errMsg(err, 'please try again'));
+  } finally { $('submit').disabled = false; }
+};
+
+// ---- Hosts (host link only) ----
+// Host UI only appears after the server confirms a host session; every host action is re-checked on the server.
+let hostEmail = '', guestView = false, adminRows = [];
+let adminToken = store.get('sfg-host') || '';
+const hostOn = () => !!hostEmail && !guestView;
+
+function applyMode() {
+  const isHostPage = MODE === 'admin';
+  $('adminLogin').hidden = !isHostPage || !!hostEmail;
+  $('adminbar').hidden = !hostEmail;
+  $('tabAdmin').setAttribute('aria-selected', String(!guestView));
+  $('tabGuest').setAttribute('aria-selected', String(guestView));
+  $('adminWho').textContent = hostEmail ? 'Signed in as ' + hostEmail + '. ' : '';
+  $('adminPanel').hidden = !hostOn();
+  $('guestPage').hidden = hostOn();   // Admin tab shows only admin; Guest view shows exactly the guest page
+  if (hostOn()) loadAdmin();
+  else if (radarChart || barChart) setTimeout(() => { radarChart && radarChart.resize(); barChart && barChart.resize(); }, 0);
+}
+$('tabAdmin').onclick = () => { guestView = false; applyMode(); window.scrollTo({ top: 0 }); };
+$('tabGuest').onclick = () => { guestView = true; applyMode(); window.scrollTo({ top: 0 }); };
+$('signOut').onclick = async () => {
+  try { await call('adminSignOut', adminToken); } catch (e) {}
+  adminToken = ''; store.set('sfg-host', null); hostEmail = ''; guestView = false; applyMode();
+  toast('Signed out');
+};
+
+let loginEmail = '';
+$('sendCode').onclick = async () => {
+  const email = $('loginEmail').value.trim().toLowerCase();
+  if (!validEmail(email)) { note('loginNote', 'Please enter a valid email.', 'err'); return; }
+  $('sendCode').disabled = true; note('loginNote', 'Sending…');
+  try {
+    await call('adminSendCode', email);
+    loginEmail = email;
+    $('codeStep').hidden = false; $('loginCode').focus();
+    note('loginNote', 'If that’s a host email, a code is on its way. Check your inbox (and spam).', 'ok');
+  } catch (err) { note('loginNote', errMsg(err, 'Couldn’t send the code — try again.'), 'err'); }
+  finally { $('sendCode').disabled = false; }
+};
+$('verifyCode').onclick = async () => {
+  const code = $('loginCode').value.trim();
+  if (!/^\d{6}$/.test(code)) { note('loginNote', 'Enter the 6-digit code from the email.', 'err'); return; }
+  $('verifyCode').disabled = true;
+  try {
+    const res = await call('adminVerify', loginEmail, code);
+    adminToken = res.token; store.set('sfg-host', adminToken);
+    hostEmail = res.email; note('loginNote', ''); applyMode();
+    toast('Signed in as host');
+  } catch (err) { note('loginNote', errMsg(err, 'Couldn’t sign in — try again.'), 'err'); }
+  finally { $('verifyCode').disabled = false; }
+};
+$('loginCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('verifyCode').click(); });
+$('loginEmail').addEventListener('keydown', e => { if (e.key === 'Enter') $('sendCode').click(); });
+
+async function loadAdmin() {
+  try { adminRows = await call('adminGetAll', adminToken); renderAdmin(); }
+  catch (e) { $('adminList').innerHTML = '<div class="empty">Couldn’t load host details — try signing in again.</div>'; }
+}
+
+function renderAdmin() {
+  $('evDate').value = EVENT.date || ''; $('evTime').value = EVENT.time || ''; $('evWhere').value = EVENT.where || '';
+  const yes = adminRows.filter(r => r.status === 'yes');
+  const people = yes.reduce((s, r) => s + r.adults + r.kids, 0);
+  const diet = adminRows.filter(r => r.dietary).length;
+  const noDish = yes.filter(r => !(r.dishes || []).length).length;
+  const replied = new Set(adminRows.map(r => String(r.household).trim().toLowerCase()));
+  const waiting = FAMILIES.filter(f => !replied.has(f.toLowerCase()));
+  $('adminTotals').innerHTML = [
+    `👥 ${people} people confirmed`,
+    `🍽️ ${noDish} coming without a dish yet`,
+    `⚠️ ${diet} with dietary notes`,
+    `✅ ${FAMILIES.length - waiting.length} of ${FAMILIES.length} replied`
+  ].map(t => `<span class="chip">${t}</span>`).join('') +
+    (waiting.length ? `<div class="note" style="width:100%">⏳ Still waiting on: ${waiting.map(esc).join(', ')}</div>` : '');
+  const label = { yes: 'Coming', maybe: 'Maybe', no: "Can't make it" };
+  const order = { yes: 0, maybe: 1, no: 2 };
+  const rows = [...adminRows].sort((a, b) => (order[a.status] ?? 3) - (order[b.status] ?? 3) || String(a.household).localeCompare(b.household));
+  const tagName = k => (TAGS.find(x => x.key === k) || {}).label || k;
+  const when = v => { const d = new Date(v); return isNaN(d) ? '' : d.toLocaleString('en-AU', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }); };
+  const dash = '<span class="muted">—</span>';
+  $('adminList').innerHTML = rows.length ? `<table class="resp"><thead><tr>
+      <th>Name</th><th>Status</th><th>Adults</th><th>Kids</th><th>Kids' ages</th><th>Bringing</th><th>Also bringing</th>
+      <th>Allergies / dietary</th><th>Email</th><th>Mobile</th><th>Note to hosts</th><th>Updated</th><th></th></tr></thead><tbody>` +
+    rows.map(r => `<tr>
+      <td>${esc(r.household)}</td>
+      <td><span class="st ${esc(r.status)}">${label[r.status] || esc(r.status)}</span></td>
+      <td>${r.status === 'no' ? dash : r.adults}</td>
+      <td>${r.status === 'no' ? dash : r.kids}</td>
+      <td>${r.kidAges ? fmtAges(r.kidAges) : dash}</td>
+      <td>${(r.dishes || []).length ? r.dishes.map(d => `<div class="dish-line">${catOf(d.cat).emoji} ${esc(d.name)} <span class="muted">· ${esc(catOf(d.cat).label)}${(d.tags || []).length ? ' · ' + d.tags.map(tagName).map(esc).join(', ') : ''}</span></div>`).join('') : dash}</td>
+      <td>${r.extras ? esc(r.extras) : dash}</td>
+      <td>${r.dietary ? '<b>' + esc(r.dietary) + '</b>' : dash}</td>
+      <td>${r.email ? esc(r.email) : dash}</td>
+      <td>${r.contact ? esc(r.contact) : dash}</td>
+      <td>${r.message ? esc(r.message) : dash}</td>
+      <td class="muted" style="white-space:nowrap">${when(r.updated)}</td>
+      <td><button type="button" class="del" data-id="${esc(r.id)}">Remove</button></td>
+    </tr>`).join('') + '</tbody></table>' : '<div class="empty" style="padding:12px">No RSVPs yet.</div>';
+  const dietRows = rows.filter(r => r.dietary);
+  $('adminDiet').innerHTML = dietRows.length ? dietRows.map(r => `<div><b>${esc(r.household)}:</b> ${esc(r.dietary)}</div>`).join('') : '<div class="empty">No allergies or dietary needs noted yet.</div>';
+  const contactRows = rows.filter(r => r.email || r.contact);
+  $('adminContacts').innerHTML = contactRows.length ? contactRows.map(r => `<div><b>${esc(r.household)}</b><br>${[r.email && esc(r.email), r.contact && esc(r.contact)].filter(Boolean).join(' · ')}</div>`).join('') : '<div class="empty">No contact details yet.</div>';
+}
+
+$('adminList').addEventListener('click', async e => {
+  const b = e.target.closest('.del'); if (!b) return;
+  const r = adminRows.find(x => x.id === b.dataset.id);
+  if (!confirm(`Remove ${r ? r.household : 'this RSVP'}? This can’t be undone.`)) return;
+  b.disabled = true;
+  try {
+    adminRows = await call('adminDelete', adminToken, b.dataset.id);
+    all = adminRows.map(({ email, contact, dietary, ...pub }) => pub);
+    renderAdmin(); renderAll(); toast('Removed');
+  } catch (err) { b.disabled = false; toast('Couldn’t remove: ' + errMsg(err, 'try again')); }
+});
+
+$('clearAll').onclick = async () => {
+  const n = adminRows.length;
+  if (!n) { toast('There are no RSVPs to clear'); return; }
+  if (!confirm(`Delete all ${n} RSVP${n === 1 ? '' : 's'}? This can’t be undone.`)) return;
+  $('clearAll').disabled = true;
+  try {
+    adminRows = await call('adminClearAll', adminToken);
+    all = []; myEmail = ''; myId = ''; myFamily = '';
+    renderAdmin(); renderAll(); toast('All RSVPs cleared — ready to send!');
+  } catch (err) { toast('Couldn’t clear: ' + errMsg(err, 'try again')); }
+  finally { $('clearAll').disabled = false; }
+};
+
+$('saveEvent').onclick = async () => {
+  try {
+    const ev = await call('adminSaveEvent', adminToken, { date: $('evDate').value.trim(), time: $('evTime').value.trim(), where: $('evWhere').value.trim() });
+    EVENT = ev; renderMeta(); toast('Event details saved');
+  } catch (err) { toast('Couldn’t save: ' + errMsg(err, 'try again')); }
+};
+
+// ---- Boot ----
+(async function init() {
+  renderMeta();
+  dishRow();
+  try {
+    const b = await call('boot');
+    all = b.all;
+    if (b.event) EVENT = b.event;
+    FAMILIES = b.families || [];
+    renderMeta(); renderAll();
+  } catch (err) {
+    $('stats').innerHTML = '<div class="empty">Couldn’t load RSVPs — try refreshing.</div>';
+  }
+  if (MODE === 'admin') {
+    try {
+      const who = await call('adminCheck', adminToken);
+      hostEmail = who && who.email || '';
+      if (!hostEmail && adminToken) { adminToken = ''; store.set('sfg-host', null); }
+    } catch (e) { hostEmail = ''; }
+    applyMode();
+  }
+})();
+</script>
+</body>
+</html>
