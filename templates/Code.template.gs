@@ -30,7 +30,7 @@ function doGet() {
 const API = {
   boot: boot, findByEmail: findByEmail, save: save,
   adminCheck: adminCheck, adminSendCode: adminSendCode, adminVerify: adminVerify, adminSignOut: adminSignOut,
-  adminGetAll: adminGetAll, adminSaveEvent: adminSaveEvent, adminDelete: adminDelete, adminClearAll: adminClearAll
+  adminGetAll: adminGetAll, adminSaveEvent: adminSaveEvent, adminSaveGuests: adminSaveGuests, adminDelete: adminDelete, adminClearAll: adminClearAll
 };
 function doPost(e) {
   let out;
@@ -110,6 +110,15 @@ function validEmail_(e) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 }
 
+/** The invited list: the hosts' saved list if they have edited it, otherwise the list above. */
+function guests_() {
+  try {
+    const raw = PropertiesService.getScriptProperties().getProperty('guests');
+    const a = raw ? JSON.parse(raw) : null;
+    return Array.isArray(a) && a.length ? a : FAMILIES;
+  } catch (e) { return FAMILIES; }
+}
+
 function getEvent_() {
   try { return Object.assign({}, DEFAULT_EVENT, JSON.parse(PropertiesService.getScriptProperties().getProperty('event') || '{}')); }
   catch (e) { return DEFAULT_EVENT; }
@@ -119,7 +128,7 @@ function getEvent_() {
 
 /** Everything the guest page needs on load. */
 function boot() {
-  return { all: rows_().map(x => publicRec_(x.r)), event: getEvent_(), families: FAMILIES };
+  return { all: rows_().map(x => publicRec_(x.r)), event: getEvent_(), families: guests_() };
 }
 
 /** A guest enters their email to load (and then change) their own RSVP. */
@@ -146,7 +155,7 @@ function save(input) {
       household = String(hit.r[3]);
     } else {
       // New RSVP: one per invited family, and one per email.
-      household = FAMILIES.find(f => f === String(input.household || '').trim());
+      household = guests_().find(f => f === String(input.household || '').trim());
       if (!household) throw new Error('Please choose your family from the list.');
       if (hit) throw new Error('That email already has an RSVP. Tap “Update my RSVP” to change it.');
       if (all.some(x => String(x.r[3]).trim().toLowerCase() === household.toLowerCase())) {
@@ -259,6 +268,16 @@ function adminSaveEvent(token, ev) {
   const clean = { date: t(ev.date, 60), time: t(ev.time, 60), where: t(ev.where, 120) };
   PropertiesService.getScriptProperties().setProperty('event', JSON.stringify(clean));
   return getEvent_();
+}
+
+function adminSaveGuests(token, list) {
+  requireAdmin_(token);
+  const seen = {};
+  const clean = (Array.isArray(list) ? list : []).map(n => String(n == null ? '' : n).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 60))
+    .filter(n => n && !seen[n.toLowerCase()] && (seen[n.toLowerCase()] = 1)).slice(0, 150);
+  if (!clean.length) throw new Error('Add at least one name.');
+  PropertiesService.getScriptProperties().setProperty('guests', JSON.stringify(clean));
+  return clean;
 }
 
 function adminDelete(token, id) {
